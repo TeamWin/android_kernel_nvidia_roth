@@ -26,6 +26,8 @@ extern unsigned long kexec_mach_type;
 extern unsigned long kexec_boot_atags;
 #ifdef CONFIG_KEXEC_HARDBOOT
 extern unsigned long kexec_hardboot;
+extern unsigned long kexec_boot_atags_len;
+extern unsigned long kexec_kernel_len;
 #endif
 
 static atomic_t waiting_for_crash_ipi;
@@ -51,6 +53,11 @@ int machine_kexec_prepare(struct kimage *image)
 		if (!err)
 			return - EINVAL;
 
+#ifdef CONFIG_KEXEC_HARDBOOT
+		if(current_segment->mem == image->start)
+			kexec_kernel_len = current_segment->memsz;
+#endif
+
 		err = get_user(header, (__be32*)current_segment->buf);
 		if (err)
 			return err;
@@ -58,6 +65,9 @@ int machine_kexec_prepare(struct kimage *image)
 		if (be32_to_cpu(header) == OF_DT_HEADER)
 		{
 			kexec_boot_atags = current_segment->mem;
+#ifdef CONFIG_KEXEC_HARDBOOT
+			kexec_boot_atags_len = current_segment->memsz;
+#endif
 		}
 	}
 	return 0;
